@@ -75,6 +75,8 @@ export function diff(previous, current) {
   for (const [id, now] of Object.entries(current)) {
     const before = previous[id];
     if (!before) continue; // app nouvelle : apparaît dans le tableau, sans message dédié
+    const tfChange = testflightChange(id, before, now);
+    if (tfChange) changes.push(tfChange);
     if (key(before) === key(now)) continue;
     const fromState = before.pending?.state ?? (before.live ? 'READY_FOR_DISTRIBUTION' : null);
     const toState = now.pending?.state ?? (now.live ? 'READY_FOR_DISTRIBUTION' : null);
@@ -89,6 +91,29 @@ export function diff(previous, current) {
     });
   }
   return changes;
+}
+
+/**
+ * Changement TestFlight : nouveau build envoyé, ou fin de traitement d'un
+ * build. Un état enregistré avant le suivi TestFlight (champ absent) ne
+ * déclenche rien, pour ne pas annoncer d'un coup tous les derniers builds.
+ */
+function testflightChange(id, before, now) {
+  if (!('testflight' in before) || !now.testflight) return null;
+  const prev = before.testflight;
+  const tf = now.testflight;
+  const isNew = !prev || prev.build !== tf.build || prev.version !== tf.version;
+  if (!isNew && prev.state === tf.state) return null;
+  return { kind: 'testflight', id, name: now.name, testflight: tf, isNew };
+}
+
+/** Titre d'un changement TestFlight. */
+function testflightHeadline(c) {
+  const tf = c.testflight;
+  const label = versionLabel({ version: tf.version ?? '?', build: tf.build });
+  if (tf.state === 'VALID') return `🧪 ${c.name} ${label} est dispo sur TestFlight`;
+  if (tf.state === 'FAILED' || tf.state === 'INVALID') return `🔴 ${c.name} · build ${label} invalide`;
+  return `🛠 ${c.name} · build ${label} envoyée sur TestFlight`;
 }
 
 const stateLabel = (s) => STATES[s]?.label ?? s?.toLowerCase().replaceAll('_', ' ') ?? '—';
@@ -113,10 +138,18 @@ export function boardLines(apps, widthsFrom = apps) {
   const liveWidth = Math.max(...widthsFrom.map((a) => (a.live?.version ?? '—').length), 4) + 3;
   return apps.map((app) => {
     const live = (app.live?.version ?? '—').padEnd(liveWidth);
-    const pending = app.pending
-      ? `${STATES[app.pending.state]?.dot ?? '⚪'} ${app.pending.version} ${stateLabel(app.pending.state)}`
-      : '';
-    return `${appDot(app)} ${app.name.padEnd(nameWidth)}${live}${pending}`.trimEnd();
+    const parts = [];
+    if (app.pending) {
+      parts.push(`${STATES[app.pending.state]?.dot ?? '⚪'} ${app.pending.version} ${stateLabel(app.pending.state)}`);
+    }
+    // Dernier build TestFlight, s'il est plus récent que ce qui est en ligne
+    // ou en cours sur l'App Store.
+    const tf = app.testflight;
+    if (tf?.version && tf.version !== app.live?.version && tf.version !== app.pending?.version) {
+      const tfDot = tf.state === 'VALID' ? '🧪' : tf.state === 'FAILED' || tf.state === 'INVALID' ? '🔴' : '🛠';
+      parts.push(`${tfDot} TF ${versionLabel({ version: tf.version, build: tf.build })}`);
+    }
+    return `${appDot(app)} ${app.name.padEnd(nameWidth)}${live}${parts.join(' · ')}`.trimEnd();
   });
 }
 
@@ -160,6 +193,25 @@ const COLORS = {
 
 /** Message court d'un changement, gardé dans le salon comme historique. */
 export function buildChangeMessage(change, { demo = false } = {}) {
+  if (change.kind === 'testflight') {
+    const title = testflightHeadline(change);
+    const tf = change.testflight;
+    return {
+      embeds: [
+        {
+          title: demo ? `🧪 ${title}` : title,
+          description:
+            tf.state === 'VALID'
+              ? 'Prête pour les testeurs'
+              : tf.state === 'FAILED' || tf.state === 'INVALID'
+                ? 'Apple a refusé le binaire'
+                : 'En cours de traitement par Apple',
+          color: tf.state === 'VALID' ? 0x14b8a6 : tf.state === 'FAILED' || tf.state === 'INVALID' ? 0xef4444 : 0x94a3b8,
+          ...(demo ? { footer: { text: 'Démo : message supprimé dans un instant' } } : {}),
+        },
+      ],
+    };
+  }
   const title = (HEADLINES[change.toState] ?? ((a) => `🔔 ${a} vient de changer de statut`))(change.name);
   return {
     embeds: [

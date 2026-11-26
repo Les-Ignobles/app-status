@@ -100,3 +100,30 @@ test('app externe : nouvelle version en ligne → « 2.23.3 → 2.23.4 »', () =
   assert.equal(e.title, '🎉 Pol est en ligne');
   assert.equal(e.description, 'iOS 2.23.3 → 2.23.4');
 });
+
+const tf = (version, build, state) => ({ version, build, state });
+
+test('TestFlight : nouveau build envoyé, puis dispo', () => {
+  const s0 = { a: { ...app('Parkeur', { version: '1.1.51' }, null), testflight: tf('1.1.52', '269', 'VALID') } };
+  const s1 = { a: { ...s0.a, testflight: tf('1.1.53', '270', 'PROCESSING') } };
+  const s2 = { a: { ...s0.a, testflight: tf('1.1.53', '270', 'VALID') } };
+  const [c1] = diff(s0, s1);
+  assert.equal(c1.kind, 'testflight');
+  assert.equal(buildChangeMessage(c1).embeds[0].title, '🛠 Parkeur · build 1.1.53 (270) envoyée sur TestFlight');
+  const [c2] = diff(s1, s2);
+  assert.equal(buildChangeMessage(c2).embeds[0].title, '🧪 Parkeur 1.1.53 (270) est dispo sur TestFlight');
+  assert.deepEqual(diff(s2, s2), []);
+});
+
+test('TestFlight : un état d\'avant le suivi (sans champ testflight) ne déclenche rien', () => {
+  const old = { a: app('Parkeur', { version: '1.1.51' }, null) };
+  const now = { a: { ...old.a, testflight: tf('1.1.53', '270', 'VALID') } };
+  assert.deepEqual(diff(old, now), []);
+});
+
+test('tableau : colonne TestFlight si plus récente que l\'App Store', () => {
+  const [line] = boardLines([{ ...app('Parkeur', { version: '1.1.51' }, null), testflight: tf('1.1.53', '270', 'VALID') }]);
+  assert.match(line, /1\.1\.51\s+🧪 TF 1\.1\.53 \(270\)$/);
+  const [same] = boardLines([{ ...app('Nox', { version: '1.0.3' }, null), testflight: tf('1.0.3', '12', 'VALID') }]);
+  assert.doesNotMatch(same, /TF/);
+});

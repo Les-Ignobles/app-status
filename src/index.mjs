@@ -75,11 +75,26 @@ for (const app of apps) {
       createdDate: v.attributes.createdDate ?? '',
     }))
     .sort((a, b) => (a.createdDate < b.createdDate ? 1 : -1));
+  // Dernier build envoyé (TestFlight) : version, numéro, état de traitement.
+  const tf = await asc(
+    `/v1/builds?filter[app]=${app.id}&sort=-uploadedDate&limit=1&include=preReleaseVersion` +
+      '&fields[builds]=version,uploadedDate,processingState,preReleaseVersion&fields[preReleaseVersions]=version'
+  );
+  const build = tf.data?.[0];
+  const preRelease = (tf.included ?? []).find((i) => i.type === 'preReleaseVersions');
   current[app.id] = {
     // Nom court d'apps.json, sinon le nom App Store (app pas encore renommée).
     name: shortNames.get(app.id) ?? app.attributes.name,
     group: 'internal',
     ...summarize(versions),
+    testflight: build
+      ? {
+          version: preRelease?.attributes.version ?? null,
+          build: build.attributes.version,
+          state: build.attributes.processingState,
+          uploadedDate: build.attributes.uploadedDate,
+        }
+      : null,
   };
 }
 
@@ -157,7 +172,12 @@ if (demo) {
 }
 
 const changes = diff(previous, current);
-if (firstRun || changes.length > 0) {
+// Nouveau champ suivi (ex. TestFlight) absent de l'état enregistré : on
+// reposte le tableau une fois, sans message par app.
+const schemaChanged = Object.entries(current).some(
+  ([id, app]) => 'testflight' in app && previous[id] && !('testflight' in previous[id])
+);
+if (firstRun || changes.length > 0 || schemaChanged) {
   if (dryRun) {
     for (const c of changes) console.log(JSON.stringify(buildChangeMessage(c), null, 2));
     console.log(JSON.stringify(buildBoardMessage(current), null, 2));
@@ -168,7 +188,13 @@ if (firstRun || changes.length > 0) {
     await discordDelete(boardMessageId);
     boardMessageId = await discordPost(buildBoardMessage(current));
   }
-  console.log(firstRun ? 'Premier passage : tableau posté.' : `${changes.length} changement(s) posté(s).`);
+  console.log(
+    firstRun
+      ? 'Premier passage : tableau posté.'
+      : changes.length
+        ? `${changes.length} changement(s) posté(s).`
+        : 'Tableau reposté (nouveau champ suivi).'
+  );
 } else {
   console.log(`Aucun changement (${Object.keys(current).length} apps).`);
 }
