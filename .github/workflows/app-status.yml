@@ -2,8 +2,9 @@ name: App status
 
 on:
   schedule:
-    # Toutes les 30 min (UTC). GitHub peut décaler les crons de quelques minutes.
-    - cron: '7,37 * * * *'
+    # Toutes les 5 min (minimum GitHub ; dépôt public = minutes gratuites).
+    # GitHub peut décaler ou sauter des passages quand il est chargé.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       demo:
@@ -42,10 +43,15 @@ jobs:
 
       - name: Enregistrer l'état
         run: |
+          git config user.name "app-status"
+          git config user.email "app-status@users.noreply.github.com"
           if [ -n "$(git status --porcelain state.json)" ]; then
-            git config user.name "app-status"
-            git config user.email "app-status@users.noreply.github.com"
             git add state.json
             git commit -m "chore: état des apps"
+            git push
+          elif [ $(( $(date +%s) - $(git log -1 --format=%ct) )) -gt $(( 50 * 86400 )) ]; then
+            # Dépôt public : GitHub suspend les crons après 60 jours sans
+            # activité. Un commit vide tous les 50 jours sans changement l'évite.
+            git commit --allow-empty -m "chore: maintien du cron"
             git push
           fi

@@ -1,6 +1,6 @@
 # app-status
 
-Toutes les 30 minutes, GitHub Actions lit l'état App Store de **toutes les
+Toutes les 5 minutes, GitHub Actions lit l'état App Store de **toutes les
 apps du compte Les Ignobles** et poste sur Discord dès que l'une d'elles change
 de statut (envoyée en review, en review, validée, rejetée, en ligne…), avec le
 tableau de toutes les apps. Une nouvelle app du compte est prise en compte
@@ -50,11 +50,14 @@ de celles d'`apps.json`, séparées par des virgules.
   variables `ASC_*` dans l'environnement).
 - Tests : `npm test`.
 
-## Coût
+## Coût et fréquence
 
-Gratuit dans les 2 000 minutes Actions mensuelles du plan Free (environ
-1 440 min/mois à raison d'un passage toutes les 30 min). Pour suivre plus
-souvent, passer le dépôt en public ou sur un plan payant.
+Dépôt **public** : minutes GitHub Actions illimitées, d'où un passage toutes
+les 5 min (le minimum de GitHub, qui peut décaler ou sauter des passages).
+Seuls `apps.json` et `state.json` sont visibles (noms et versions, déjà
+publics sur l'App Store) ; les clés restent des secrets. Sans changement
+pendant 50 jours, le workflow pousse un commit vide pour que GitHub ne
+suspende pas le cron.
 
 ## Plus tard
 
