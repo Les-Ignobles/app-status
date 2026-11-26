@@ -1,0 +1,10 @@
+{
+  "name": "app-status",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node src/index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,45 @@
+name: App status
+
+on:
+  schedule:
+    # Toutes les 30 min (UTC). GitHub peut décaler les crons de quelques minutes.
+    - cron: '7,37 * * * *'
+  workflow_dispatch: {}
+
+# Un seul passage à la fois : deux passages simultanés posteraient deux fois.
+concurrency:
+  group: app-status
+  cancel-in-progress: false
+
+permissions:
+  contents: write # commit de state.json
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Vérifier les statuts et poster sur Discord
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          IGNORED_BUNDLE_IDS: ${{ vars.IGNORED_BUNDLE_IDS }}
+        run: node src/index.mjs
+
+      - name: Enregistrer l'état
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "app-status"
+            git config user.email "app-status@users.noreply.github.com"
+            git add state.json
+            git commit -m "chore: état des apps"
+            git push
+          fi
