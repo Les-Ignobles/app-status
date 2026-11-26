@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1575590255048925218",
+  "boardMessageId": "1575653776558133329",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -31,6 +31,22 @@
         "uploadedDate": "2026-06-30T05:48:07-07:00"
       }
     },
+    "6833487577": {
+      "name": "GetUp",
+      "group": "internal",
+      "live": null,
+      "pending": {
+        "version": "1.0",
+        "build": "1",
+        "state": "PREPARE_FOR_SUBMISSION"
+      },
+      "testflight": {
+        "version": "1.0",
+        "build": "4",
+        "state": "VALID",
+        "uploadedDate": "2026-11-26T15:10:55-08:00"
+      }
+    },
     "6499463714": {
       "name": "Parkeur",
       "group": "internal",
@@ -38,7 +54,11 @@
         "version": "1.1.51",
         "build": "266"
       },
-      "pending": null,
+      "pending": {
+        "version": "1.1.54",
+        "build": "271",
+        "state": "WAITING_FOR_REVIEW"
+      },
       "testflight": {
         "version": "1.1.54",
         "build": "271",
@@ -160,17 +180,6 @@
         "state": "VALID",
         "uploadedDate": "2026-11-09T13:06:52-08:00"
       }
-    },
-    "6833487577": {
-      "name": "GetUp",
-      "group": "internal",
-      "live": null,
-      "pending": {
-        "version": "1.0",
-        "build": null,
-        "state": "PREPARE_FOR_SUBMISSION"
-      },
-      "testflight": null
     },
     "6470024553": {
       "name": "Aleatium",
