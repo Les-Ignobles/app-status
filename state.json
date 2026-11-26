@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1575524655731703839",
+  "boardMessageId": "1575526246115315804",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -8,7 +8,13 @@
         "version": "2.3.5",
         "build": "53"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "2.3.5",
+        "build": "53",
+        "state": "VALID",
+        "uploadedDate": "2026-09-29T07:18:09-07:00"
+      }
     },
     "1642297492": {
       "name": "Le temps merde",
@@ -17,7 +23,13 @@
         "version": "1.0",
         "build": "39"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.0.0",
+        "build": "39",
+        "state": "VALID",
+        "uploadedDate": "2026-06-30T05:48:07-07:00"
+      }
     },
     "6834033730": {
       "name": "Nimble",
@@ -30,6 +42,12 @@
         "version": "1.1",
         "build": "3",
         "state": "IN_REVIEW"
+      },
+      "testflight": {
+        "version": "1.1",
+        "build": "3",
+        "state": "VALID",
+        "uploadedDate": "2026-11-26T05:01:53-08:00"
       }
     },
     "6499463714": {
@@ -39,7 +57,13 @@
         "version": "1.1.51",
         "build": "266"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.1.53",
+        "build": "270",
+        "state": "VALID",
+        "uploadedDate": "2026-11-26T06:17:39-08:00"
+      }
     },
     "6834004864": {
       "name": "La Taupe",
@@ -48,7 +72,13 @@
         "version": "1.0.1",
         "build": "6"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.0.1",
+        "build": "6",
+        "state": "VALID",
+        "uploadedDate": "2026-11-23T11:29:14-08:00"
+      }
     },
     "6830607158": {
       "name": "Kut",
@@ -58,6 +88,12 @@
         "version": "1.0",
         "build": "27",
         "state": "WAITING_FOR_REVIEW"
+      },
+      "testflight": {
+        "version": "1.0",
+        "build": "28",
+        "state": "VALID",
+        "uploadedDate": "2026-11-20T08:16:16-08:00"
       }
     },
     "6451420553": {
@@ -67,7 +103,13 @@
         "version": "1.0.14",
         "build": "38"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.0.14",
+        "build": "38",
+        "state": "VALID",
+        "uploadedDate": "2026-11-18T07:55:53-08:00"
+      }
     },
     "6833013103": {
       "name": "Scanner Pop",
@@ -77,6 +119,12 @@
         "version": "1.0",
         "build": "2",
         "state": "REJECTED"
+      },
+      "testflight": {
+        "version": "1.0",
+        "build": "2",
+        "state": "VALID",
+        "uploadedDate": "2026-11-10T13:01:21-08:00"
       }
     },
     "6757807442": {
@@ -90,6 +138,12 @@
         "version": "1.0.17",
         "build": null,
         "state": "PREPARE_FOR_SUBMISSION"
+      },
+      "testflight": {
+        "version": "1.0.16",
+        "build": "80",
+        "state": "VALID",
+        "uploadedDate": "2026-06-25T13:04:04-07:00"
       }
     },
     "6829931023": {
@@ -99,7 +153,13 @@
         "version": "1.0.3",
         "build": "1"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.0.3",
+        "build": "1",
+        "state": "VALID",
+        "uploadedDate": "2026-11-09T13:06:52-08:00"
+      }
     },
     "6833487577": {
       "name": "GetUp",
@@ -109,7 +169,8 @@
         "version": "1.0",
         "build": null,
         "state": "PREPARE_FOR_SUBMISSION"
-      }
+      },
+      "testflight": null
     },
     "6470024553": {
       "name": "Aleatium",
@@ -118,7 +179,13 @@
         "version": "1.0.5",
         "build": "18"
       },
-      "pending": null
+      "pending": null,
+      "testflight": {
+        "version": "1.0.5",
+        "build": "18",
+        "state": "VALID",
+        "uploadedDate": "2023-11-28T01:05:03-08:00"
+      }
     },
     "ext:6752601333": {
       "name": "Basta",
