@@ -12,14 +12,17 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { buildMessage, diff, summarize } from './status.mjs';
 
 const STATE_FILE = new URL('../state.json', import.meta.url);
+// Noms courts, groupes, apps externes et exclusions (cf. apps.json).
+const config = JSON.parse(readFileSync(new URL('../apps.json', import.meta.url), 'utf8'));
+const shortNames = new Map((config.internal ?? []).map((a) => [String(a.id), a.name]));
 const { ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY, DISCORD_WEBHOOK_URL } = process.env;
-const ignored = [process.env.IGNORED_APPS, process.env.IGNORED_BUNDLE_IDS]
+const ignored = [(config.ignored ?? []).join(','), process.env.IGNORED_APPS, process.env.IGNORED_BUNDLE_IDS]
   .join(',')
   .split(',')
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
-const isIgnored = ({ name, bundleId }) =>
-  ignored.some((i) => bundleId.toLowerCase() === i || name.toLowerCase().startsWith(i));
+const isIgnored = ({ id, name, bundleId }) =>
+  ignored.some((i) => id === i || bundleId.toLowerCase() === i || name.toLowerCase().startsWith(i));
 const dryRun = process.argv.includes('--dry-run');
 
 for (const [name, value] of Object.entries({ ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY })) {
@@ -52,7 +55,7 @@ async function asc(path) {
 }
 
 const apps = (await asc('/v1/apps?limit=200&fields[apps]=name,bundleId')).data.filter(
-  (a) => !isIgnored(a.attributes)
+  (a) => !isIgnored({ id: a.id, ...a.attributes })
 );
 
 const current = {};
@@ -70,7 +73,28 @@ for (const app of apps) {
       createdDate: v.attributes.createdDate ?? '',
     }))
     .sort((a, b) => (a.createdDate < b.createdDate ? 1 : -1));
-  current[app.id] = { name: app.attributes.name, ...summarize(versions) };
+  current[app.id] = {
+    // Nom court d'apps.json, sinon le nom App Store (app pas encore renommée).
+    name: shortNames.get(app.id) ?? app.attributes.name,
+    group: 'internal',
+    ...summarize(versions),
+  };
+}
+
+// Apps externes (autres comptes) : version en ligne sur l'App Store public.
+for (const ext of config.external ?? []) {
+  const res = await fetch(`https://itunes.apple.com/lookup?id=${ext.appStoreId}&country=${ext.country ?? 'fr'}`);
+  const result = res.ok ? (await res.json()).results?.[0] : null;
+  if (!result) {
+    console.warn(`App externe introuvable sur l'App Store : ${ext.name} (${ext.appStoreId})`);
+    continue;
+  }
+  current[`ext:${ext.appStoreId}`] = {
+    name: ext.name,
+    group: 'external',
+    live: { version: result.version, build: null },
+    pending: null,
+  };
 }
 
 const firstRun = !existsSync(STATE_FILE);
@@ -91,7 +115,7 @@ if (firstRun || changes.length > 0) {
   }
   console.log(firstRun ? 'Premier passage : tableau posté.' : `${changes.length} changement(s) posté(s).`);
 } else {
-  console.log(`Aucun changement (${apps.length} apps).`);
+  console.log(`Aucun changement (${Object.keys(current).length} apps).`);
 }
 
 if (!dryRun) writeFileSync(STATE_FILE, JSON.stringify(current, null, 2) + '\n');

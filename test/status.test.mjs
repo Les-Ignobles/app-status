@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMessage, diff, summarize, boardLine } from '../src/status.mjs';
+import { buildMessage, diff, summarize, boardLine, boardLines } from '../src/status.mjs';
 
 const v = (version, state, createdDate, build = null) => ({ version, state, createdDate, build });
 
@@ -66,6 +66,30 @@ test('buildMessage : titre et en-tête du changement, puis le tableau', () => {
   const { embeds: [e] } = buildMessage(changes, current, new Date('2026-11-26T13:32:00Z'));
   assert.equal(e.title, '🔵 Parkeur passe en review');
   assert.match(e.description, /^iOS 1\.1\.53 \(270\) · Waiting for review → In review/);
-  assert.match(e.description, /🟢 \*\*Nimble\*\*/);
+  assert.match(e.description, /\*\*🏠 Apps internes\*\*\n```\n/);
+  assert.match(e.description, /🟢 Nimble\s+2\.0\.3/);
   assert.equal(e.footer.text, 'Mis à jour à 14:32');
+});
+
+test('boardLines : colonnes alignées (nom, version en ligne, en cours)', () => {
+  const lines = boardLines([
+    app('Le temps merde', { version: '1.0' }, null),
+    app('Parkeur', { version: '1.1.51' }, { version: '1.1.53', state: 'IN_REVIEW' }),
+    app('Kut', null, { version: '1.0', state: 'WAITING_FOR_REVIEW' }),
+  ]);
+  // La version en ligne commence à la même colonne sur chaque ligne.
+  const col = (l, v) => [...l].indexOf(v[0], 3);
+  assert.equal(col(lines[0], '1.0'), col(lines[1], '1.1.51'));
+  assert.match(lines[1], /1\.1\.51\s+🔵 1\.1\.53 en review$/);
+  assert.match(lines[2], /—\s+🟡 1\.0 en attente de review$/);
+});
+
+test('app externe : nouvelle version en ligne → « 2.23.3 → 2.23.4 »', () => {
+  const before = { p: { ...app('Pol', { version: '2.23.3' }, null), group: 'external' } };
+  const after = { p: { ...app('Pol', { version: '2.23.4' }, null), group: 'external' } };
+  const changes = diff(before, after);
+  const { embeds: [e] } = buildMessage(changes, after);
+  assert.equal(e.title, '🎉 Pol est en ligne');
+  assert.match(e.description, /^iOS 2\.23\.3 → 2\.23\.4\n/);
+  assert.match(e.description, /\*\*🤝 Apps externes\*\*/);
 });

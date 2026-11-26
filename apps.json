@@ -1,0 +1,86 @@
+{
+  "_doc": "Apps suivies. internal : apps du compte App Store Connect, par id ; name = nom court affiché. external : apps d'autres comptes, version en ligne lue sur l'App Store public (appStoreId = id dans l'URL apps.apple.com/.../idXXXX). ignored : ids ou débuts de nom à ne jamais afficher.",
+  "internal": [
+    {
+      "id": "6470024553",
+      "name": "Aleatium",
+      "appStoreName": "Aleatium - Jeu de soirée"
+    },
+    {
+      "id": "6451420553",
+      "name": "Boomium",
+      "appStoreName": "Boomium - Jeu entre amis"
+    },
+    {
+      "id": "6757807442",
+      "name": "DOZ",
+      "appStoreName": "DOZ - Sport au quotidien"
+    },
+    {
+      "id": "6833487577",
+      "name": "GetUp",
+      "appStoreName": "GetUp: Squat to Scroll"
+    },
+    {
+      "id": "6830607158",
+      "name": "Kut",
+      "appStoreName": "Kut - Montage viral IA"
+    },
+    {
+      "id": "6834004864",
+      "name": "La Taupe",
+      "appStoreName": "La Taupe: Undercover Imposteur"
+    },
+    {
+      "id": "1642297492",
+      "name": "Le temps merde",
+      "appStoreName": "Le temps merde - Jeu de bluff"
+    },
+    {
+      "id": "6834033730",
+      "name": "Nimble",
+      "appStoreName": "Nimble: Étirements & Souplesse"
+    },
+    {
+      "id": "6829931023",
+      "name": "Nox",
+      "appStoreName": "Werewolf Nox: Mafia Party Game"
+    },
+    {
+      "id": "6499463714",
+      "name": "Parkeur",
+      "appStoreName": "Parkeur - Fiches de révision"
+    },
+    {
+      "id": "6833013103",
+      "name": "Scanner Pop",
+      "appStoreName": "Scanner Pop: PDF, OCR & Sign"
+    },
+    {
+      "id": "1607986709",
+      "name": "Sheech",
+      "appStoreName": "Sheech"
+    }
+  ],
+  "external": [
+    {
+      "appStoreId": 6752601333,
+      "name": "Basta"
+    },
+    {
+      "appStoreId": 6737475990,
+      "name": "Fitness Camp"
+    },
+    {
+      "appStoreId": 6447811237,
+      "name": "Pol"
+    }
+  ],
+  "ignored": [
+    "Chat AI",
+    "appwin showcase",
+    "Frontium",
+    "Tourny",
+    "Fusion"
+  ]
+}

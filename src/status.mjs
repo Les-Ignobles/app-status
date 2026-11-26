@@ -79,7 +79,14 @@ export function diff(previous, current) {
     const fromState = before.pending?.state ?? (before.live ? 'READY_FOR_DISTRIBUTION' : null);
     const toState = now.pending?.state ?? (now.live ? 'READY_FOR_DISTRIBUTION' : null);
     const version = now.pending ?? now.live;
-    changes.push({ id, name: now.name, fromState, toState, version });
+    changes.push({
+      id,
+      name: now.name,
+      fromState,
+      toState,
+      version,
+      fromLive: before.live?.version ?? null,
+    });
   }
   return changes;
 }
@@ -88,48 +95,80 @@ const stateLabel = (s) => STATES[s]?.label ?? s?.toLowerCase().replaceAll('_', '
 const pretty = (s) =>
   s ? s.toLowerCase().replaceAll('_', ' ').replace(/^\w/, (c) => c.toUpperCase()) : '—';
 
-/** Une ligne du tableau pour une app. */
+/** Pastille d'ensemble d'une app : rouge si rejetée, verte si en ligne. */
+function appDot(app) {
+  if (app.pending && ['REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'].includes(app.pending.state)) return '🔴';
+  if (app.live) return '🟢';
+  return STATES[app.pending?.state]?.dot ?? '⚪';
+}
+
+/**
+ * Lignes alignées d'un groupe d'apps, pour un bloc monospace :
+ * pastille, nom court, version en ligne, puis ce qui est en cours.
+ */
+export function boardLines(apps, widthsFrom = apps) {
+  // Largeurs calculées sur toutes les apps du message : les deux blocs
+  // (internes, externes) partagent les mêmes colonnes.
+  const nameWidth = Math.max(...widthsFrom.map((a) => a.name.length), 4) + 2;
+  const liveWidth = Math.max(...widthsFrom.map((a) => (a.live?.version ?? '—').length), 4) + 3;
+  return apps.map((app) => {
+    const live = (app.live?.version ?? '—').padEnd(liveWidth);
+    const pending = app.pending
+      ? `${STATES[app.pending.state]?.dot ?? '⚪'} ${app.pending.version} ${stateLabel(app.pending.state)}`
+      : '';
+    return `${appDot(app)} ${app.name.padEnd(nameWidth)}${live}${pending}`.trimEnd();
+  });
+}
+
+/** Ancienne ligne (texte riche), gardée pour les tests et le debug. */
 export function boardLine(app) {
   const parts = [];
   if (app.live) parts.push(`iOS ${app.live.version} en ligne`);
   if (app.pending) {
-    const s = STATES[app.pending.state];
-    parts.push(`${s?.dot ?? '⚪'} ${app.pending.version} ${stateLabel(app.pending.state)}`);
+    parts.push(`${STATES[app.pending.state]?.dot ?? '⚪'} ${app.pending.version} ${stateLabel(app.pending.state)}`);
   }
-  const dot = app.pending && ['REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'].includes(app.pending.state)
-    ? '🔴'
-    : app.live
-      ? '🟢'
-      : STATES[app.pending?.state]?.dot ?? '⚪';
-  return `${dot} **${app.name}** — ${parts.length ? parts.join(' · ') : 'rien en cours'}`;
+  return `${appDot(app)} **${app.name}** — ${parts.length ? parts.join(' · ') : 'rien en cours'}`;
+}
+
+const GROUPS = [
+  { key: 'internal', title: '🏠 Apps internes' },
+  { key: 'external', title: '🤝 Apps externes' },
+];
+
+/** Ligne d'en-tête d'un changement. */
+function changeLine(c, multiple) {
+  const prefix = multiple ? `**${c.name}** · ` : '';
+  // Nouvelle version en ligne sans état intermédiaire connu (apps externes).
+  if (c.fromState === c.toState && c.toState === 'READY_FOR_DISTRIBUTION') {
+    return `${prefix}iOS ${c.fromLive ?? '—'} → ${c.version?.version ?? '—'}`;
+  }
+  return `${prefix}iOS ${c.version ? versionLabel(c.version) : ''} · ${pretty(c.fromState)} → ${pretty(c.toState)}`;
 }
 
 /**
- * Embed Discord : le changement en tête (s'il y en a), puis l'état de toutes
- * les apps. changes vide = tableau seul (premier passage).
+ * Embed Discord : le changement en tête (s'il y en a), puis les apps internes
+ * et externes, chacune dans un bloc aligné. changes vide = tableau seul.
  */
 export function buildMessage(changes, current, now = new Date()) {
-  const apps = Object.values(current).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  const board = apps.map(boardLine).join('\n');
   const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+  const apps = Object.values(current);
 
-  let title;
+  const sections = GROUPS.map(({ key, title }) => {
+    const group = apps
+      .filter((a) => (a.group ?? 'internal') === key)
+      .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    return group.length ? `**${title}**\n\`\`\`\n${boardLines(group, apps).join('\n')}\n\`\`\`` : '';
+  }).filter(Boolean);
+
+  let title = '📱 État des apps';
   let header = '';
-  if (changes.length === 0) {
-    title = '📱 État des apps';
-  } else {
+  if (changes.length > 0) {
     const first = changes[0];
     title =
       changes.length === 1
         ? (HEADLINES[first.toState] ?? ((a) => `🔔 ${a} vient de changer de statut`))(first.name)
         : `🔔 ${changes.length} apps viennent de changer de statut`;
-    header =
-      changes
-        .map(
-          (c) =>
-            `${changes.length > 1 ? `**${c.name}** · ` : ''}iOS ${c.version ? versionLabel(c.version) : ''} · ${pretty(c.fromState)} → ${pretty(c.toState)}`
-        )
-        .join('\n') + '\n\n━━━━━━━━━━━━━━━━━━\n📱 **État des apps**\n\n';
+    header = changes.map((c) => changeLine(c, changes.length > 1)).join('\n') + '\n\n';
   }
 
   const color =
@@ -143,7 +182,7 @@ export function buildMessage(changes, current, now = new Date()) {
     embeds: [
       {
         title,
-        description: header + board,
+        description: header + sections.join('\n'),
         color,
         footer: { text: `Mis à jour à ${time}` },
       },

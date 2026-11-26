@@ -17,6 +17,18 @@ iOS 1.1.53 (270) · Waiting for review → In review
 Mis à jour à 14:32
 ```
 
+## Apps suivies : `apps.json`
+
+- `internal` : apps du compte Les Ignobles, par id App Store Connect, avec
+  leur **nom court** affiché. Une app du compte absente de la liste apparaît
+  avec son nom App Store complet (à ajouter ici pour la renommer).
+- `external` : apps d'autres comptes, par `appStoreId` (l'id dans l'URL
+  `apps.apple.com/.../idXXXX`). Seule la **version en ligne** est connue
+  (App Store public) : message quand une nouvelle version sort. Pour les
+  statuts de review, il faudrait une clé App Store Connect de leur compte.
+- `ignored` : ids ou débuts de nom à ne jamais afficher (la variable GitHub
+  `IGNORED_APPS` s'y ajoute).
+
 ## Réglages (Settings → Secrets and variables → Actions)
 
 | Secret | Valeur |
@@ -26,9 +38,8 @@ Mis à jour à 14:32
 | `ASC_PRIVATE_KEY` | contenu du `.p8` |
 | `DISCORD_WEBHOOK_URL` | URL du webhook du salon Discord |
 
-Variable optionnelle `IGNORED_APPS` (onglet Variables) : apps à ne jamais
-suivre, séparées par des virgules, par bundle id ou début du nom (sans tenir
-compte des majuscules). Ex. `Chat AI, appwin showcase, Tourny`.
+Variable optionnelle `IGNORED_APPS` (onglet Variables) : exclusions en plus
+de celles d'`apps.json`, séparées par des virgules.
 
 ## Utilisation
 
