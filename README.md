@@ -26,8 +26,9 @@ Mis à jour à 14:32
 | `ASC_PRIVATE_KEY` | contenu du `.p8` |
 | `DISCORD_WEBHOOK_URL` | URL du webhook du salon Discord |
 
-Variable optionnelle `IGNORED_BUNDLE_IDS` (onglet Variables) : bundle ids à
-ne pas suivre, séparés par des virgules.
+Variable optionnelle `IGNORED_APPS` (onglet Variables) : apps à ne jamais
+suivre, séparées par des virgules, par bundle id ou début du nom (sans tenir
+compte des majuscules). Ex. `Chat AI, appwin showcase, Tourny`.
 
 ## Utilisation
 

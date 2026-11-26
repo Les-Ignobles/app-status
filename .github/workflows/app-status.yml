@@ -31,6 +31,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          IGNORED_APPS: ${{ vars.IGNORED_APPS }}
           IGNORED_BUNDLE_IDS: ${{ vars.IGNORED_BUNDLE_IDS }}
         run: node src/index.mjs
 

@@ -2,7 +2,9 @@
 // quand l'une d'elles change de statut (avec le tableau de toutes les apps).
 //
 // Variables (secrets GitHub) : ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY,
-// DISCORD_WEBHOOK_URL. Optionnel : IGNORED_BUNDLE_IDS (séparés par des virgules).
+// DISCORD_WEBHOOK_URL. Optionnel (variable GitHub) : IGNORED_APPS, apps à ne
+// jamais suivre, séparées par des virgules : bundle id, ou début du nom de
+// l'app (sans tenir compte des majuscules). Ex. « Chat AI, Tourny ».
 // État précédent : state.json (commité par le workflow).
 
 import { createPrivateKey, sign } from 'node:crypto';
@@ -11,7 +13,13 @@ import { buildMessage, diff, summarize } from './status.mjs';
 
 const STATE_FILE = new URL('../state.json', import.meta.url);
 const { ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY, DISCORD_WEBHOOK_URL } = process.env;
-const ignored = new Set((process.env.IGNORED_BUNDLE_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+const ignored = [process.env.IGNORED_APPS, process.env.IGNORED_BUNDLE_IDS]
+  .join(',')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+const isIgnored = ({ name, bundleId }) =>
+  ignored.some((i) => bundleId.toLowerCase() === i || name.toLowerCase().startsWith(i));
 const dryRun = process.argv.includes('--dry-run');
 
 for (const [name, value] of Object.entries({ ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY })) {
@@ -44,7 +52,7 @@ async function asc(path) {
 }
 
 const apps = (await asc('/v1/apps?limit=200&fields[apps]=name,bundleId')).data.filter(
-  (a) => !ignored.has(a.attributes.bundleId)
+  (a) => !isIgnored(a.attributes)
 );
 
 const current = {};
