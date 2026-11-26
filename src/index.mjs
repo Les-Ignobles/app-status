@@ -9,7 +9,7 @@
 
 import { createPrivateKey, sign } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { buildMessage, diff, summarize } from './status.mjs';
+import { buildBoardMessage, buildChangeMessage, diff, summarize } from './status.mjs';
 
 const STATE_FILE = new URL('../state.json', import.meta.url);
 // Noms courts, groupes, apps externes et exclusions (cf. apps.json).
@@ -24,6 +24,8 @@ const ignored = [(config.ignored ?? []).join(','), process.env.IGNORED_APPS, pro
 const isIgnored = ({ id, name, bundleId }) =>
   ignored.some((i) => id === i || bundleId.toLowerCase() === i || name.toLowerCase().startsWith(i));
 const dryRun = process.argv.includes('--dry-run');
+// Démo : 3 faux changements sur Parkeur, 10 s d'écart, puis nettoyage.
+const demo = process.argv.includes('--demo');
 
 for (const [name, value] of Object.entries({ ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY })) {
   if (!value) throw new Error(`Variable manquante : ${name}`);
@@ -97,25 +99,78 @@ for (const ext of config.external ?? []) {
   };
 }
 
-const firstRun = !existsSync(STATE_FILE);
-const previous = firstRun ? {} : JSON.parse(readFileSync(STATE_FILE, 'utf8'));
-const changes = diff(previous, current);
+// --- Discord (webhook) : poster en récupérant l'id, supprimer ses messages.
+async function discordPost(message) {
+  const res = await fetch(`${DISCORD_WEBHOOK_URL}?wait=true`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) throw new Error(`Discord ${res.status} : ${await res.text()}`);
+  return (await res.json()).id;
+}
+async function discordDelete(id) {
+  if (!id) return;
+  const res = await fetch(`${DISCORD_WEBHOOK_URL}/messages/${id}`, { method: 'DELETE' });
+  if (!res.ok && res.status !== 404) console.warn(`Discord : suppression de ${id} impossible (${res.status})`);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// État précédent : { apps, boardMessageId } (ancien format : les apps seules).
+const firstRun = !existsSync(STATE_FILE);
+const saved = firstRun ? {} : JSON.parse(readFileSync(STATE_FILE, 'utf8'));
+const previous = saved.apps ?? (saved.boardMessageId === undefined ? saved : {});
+let boardMessageId = saved.boardMessageId ?? null;
+const save = (apps) =>
+  writeFileSync(STATE_FILE, JSON.stringify({ boardMessageId, apps }, null, 2) + '\n');
+
+if (demo) {
+  const id = Object.keys(current).find((k) => current[k].name === 'Parkeur');
+  if (!id) throw new Error('Démo : Parkeur introuvable');
+  const base = current[id];
+  const steps = [
+    { live: base.live, pending: { version: '1.1.53', build: '270', state: 'WAITING_FOR_REVIEW' } },
+    { live: base.live, pending: { version: '1.1.53', build: '270', state: 'IN_REVIEW' } },
+    { live: base.live, pending: { version: '1.1.53', build: '270', state: 'PENDING_DEVELOPER_RELEASE' } },
+    { live: { version: '1.1.53', build: '270' }, pending: null },
+  ];
+  const demoMessages = [];
+  let demoBoard = null;
+  await discordDelete(boardMessageId); // le vrai tableau revient à la fin
+  for (let i = 1; i < steps.length; i++) {
+    const before = { ...current, [id]: { ...base, ...steps[i - 1] } };
+    const after = { ...current, [id]: { ...base, ...steps[i] } };
+    for (const change of diff(before, after)) {
+      demoMessages.push(await discordPost(buildChangeMessage(change, { demo: true })));
+    }
+    await discordDelete(demoBoard);
+    demoBoard = await discordPost(buildBoardMessage(after, new Date(), { demo: true }));
+    console.log(`Démo : étape ${i}/3 postée`);
+    if (i < steps.length - 1) await sleep(10_000);
+  }
+  await sleep(60_000);
+  for (const m of [...demoMessages, demoBoard]) await discordDelete(m);
+  boardMessageId = await discordPost(buildBoardMessage(current));
+  save(firstRun ? current : previous); // la démo ne touche pas à l'état des apps
+  console.log('Démo terminée : messages de démo supprimés, vrai tableau reposté.');
+  process.exit(0);
+}
+
+const changes = diff(previous, current);
 if (firstRun || changes.length > 0) {
-  const message = buildMessage(changes, current);
   if (dryRun) {
-    console.log(JSON.stringify(message, null, 2));
+    for (const c of changes) console.log(JSON.stringify(buildChangeMessage(c), null, 2));
+    console.log(JSON.stringify(buildBoardMessage(current), null, 2));
   } else {
-    const res = await fetch(DISCORD_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    });
-    if (!res.ok) throw new Error(`Discord ${res.status} : ${await res.text()}`);
+    // Historique : un message court par changement, qui reste.
+    for (const change of changes) await discordPost(buildChangeMessage(change));
+    // Tableau : un seul dans le salon, toujours en bas.
+    await discordDelete(boardMessageId);
+    boardMessageId = await discordPost(buildBoardMessage(current));
   }
   console.log(firstRun ? 'Premier passage : tableau posté.' : `${changes.length} changement(s) posté(s).`);
 } else {
   console.log(`Aucun changement (${Object.keys(current).length} apps).`);
 }
 
-if (!dryRun) writeFileSync(STATE_FILE, JSON.stringify(current, null, 2) + '\n');
+if (!dryRun) save(current);

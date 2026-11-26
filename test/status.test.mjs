@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMessage, diff, summarize, boardLine, boardLines } from '../src/status.mjs';
+import { buildBoardMessage, buildChangeMessage, diff, summarize, boardLine, boardLines } from '../src/status.mjs';
 
 const v = (version, state, createdDate, build = null) => ({ version, state, createdDate, build });
 
@@ -57,17 +57,25 @@ test('boardLine : rejetée en rouge, en ligne en vert', () => {
   assert.match(boardLine(app('GetUp', null, null)), /rien en cours/);
 });
 
-test('buildMessage : titre et en-tête du changement, puis le tableau', () => {
+test('message de changement : titre et ligne de transition', () => {
+  const change = { name: 'Parkeur', fromState: 'WAITING_FOR_REVIEW', toState: 'IN_REVIEW', version: { version: '1.1.53', build: '270' } };
+  const { embeds: [e] } = buildChangeMessage(change);
+  assert.equal(e.title, '🔵 Parkeur passe en review');
+  assert.equal(e.description, 'iOS 1.1.53 (270) · Waiting for review → In review');
+  assert.equal(buildChangeMessage(change, { demo: true }).embeds[0].title, '🧪 🔵 Parkeur passe en review');
+});
+
+test('tableau : deux blocs alignés et heure de mise à jour', () => {
   const current = {
     a: app('Parkeur', { version: '1.1.51' }, { version: '1.1.53', build: '270', state: 'IN_REVIEW' }),
     b: app('Nimble', { version: '2.0.3' }, null),
+    c: { ...app('Pol', { version: '2.23.3' }, null), group: 'external' },
   };
-  const changes = [{ name: 'Parkeur', fromState: 'WAITING_FOR_REVIEW', toState: 'IN_REVIEW', version: current.a.pending }];
-  const { embeds: [e] } = buildMessage(changes, current, new Date('2026-11-26T13:32:00Z'));
-  assert.equal(e.title, '🔵 Parkeur passe en review');
-  assert.match(e.description, /^iOS 1\.1\.53 \(270\) · Waiting for review → In review/);
-  assert.match(e.description, /\*\*🏠 Apps internes\*\*\n```\n/);
+  const { embeds: [e] } = buildBoardMessage(current, new Date('2026-11-26T13:32:00Z'));
+  assert.equal(e.title, '📱 État des apps');
+  assert.match(e.description, /^\*\*🏠 Apps internes\*\*\n```\n/);
   assert.match(e.description, /🟢 Nimble\s+2\.0\.3/);
+  assert.match(e.description, /\*\*🤝 Apps externes\*\*\n```\n🟢 Pol/);
   assert.equal(e.footer.text, 'Mis à jour à 14:32');
 });
 
@@ -87,9 +95,8 @@ test('boardLines : colonnes alignées (nom, version en ligne, en cours)', () => 
 test('app externe : nouvelle version en ligne → « 2.23.3 → 2.23.4 »', () => {
   const before = { p: { ...app('Pol', { version: '2.23.3' }, null), group: 'external' } };
   const after = { p: { ...app('Pol', { version: '2.23.4' }, null), group: 'external' } };
-  const changes = diff(before, after);
-  const { embeds: [e] } = buildMessage(changes, after);
+  const [change] = diff(before, after);
+  const { embeds: [e] } = buildChangeMessage(change);
   assert.equal(e.title, '🎉 Pol est en ligne');
-  assert.match(e.description, /^iOS 2\.23\.3 → 2\.23\.4\n/);
-  assert.match(e.description, /\*\*🤝 Apps externes\*\*/);
+  assert.equal(e.description, 'iOS 2.23.3 → 2.23.4');
 });

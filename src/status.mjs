@@ -145,45 +145,53 @@ function changeLine(c, multiple) {
   return `${prefix}iOS ${c.version ? versionLabel(c.version) : ''} · ${pretty(c.fromState)} → ${pretty(c.toState)}`;
 }
 
+const COLORS = {
+  IN_REVIEW: 0x3b82f6,
+  WAITING_FOR_REVIEW: 0xeab308,
+  READY_FOR_DISTRIBUTION: 0x22c55e,
+  PROCESSING_FOR_DISTRIBUTION: 0x22c55e,
+  PENDING_DEVELOPER_RELEASE: 0xa855f7,
+  PENDING_APPLE_RELEASE: 0xa855f7,
+  ACCEPTED: 0xa855f7,
+  REJECTED: 0xef4444,
+  METADATA_REJECTED: 0xef4444,
+  INVALID_BINARY: 0xef4444,
+};
+
+/** Message court d'un changement, gardé dans le salon comme historique. */
+export function buildChangeMessage(change, { demo = false } = {}) {
+  const title = (HEADLINES[change.toState] ?? ((a) => `🔔 ${a} vient de changer de statut`))(change.name);
+  return {
+    embeds: [
+      {
+        title: demo ? `🧪 ${title}` : title,
+        description: changeLine(change, false),
+        color: COLORS[change.toState] ?? 0xf59e0b,
+        ...(demo ? { footer: { text: 'Démo : message supprimé dans un instant' } } : {}),
+      },
+    ],
+  };
+}
+
 /**
- * Embed Discord : le changement en tête (s'il y en a), puis les apps internes
- * et externes, chacune dans un bloc aligné. changes vide = tableau seul.
+ * Tableau de toutes les apps (internes puis externes, blocs alignés). Un seul
+ * dans le salon : l'ancien est supprimé quand le nouveau est posté.
  */
-export function buildMessage(changes, current, now = new Date()) {
+export function buildBoardMessage(current, now = new Date(), { demo = false } = {}) {
   const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
   const apps = Object.values(current);
-
   const sections = GROUPS.map(({ key, title }) => {
     const group = apps
       .filter((a) => (a.group ?? 'internal') === key)
       .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     return group.length ? `**${title}**\n\`\`\`\n${boardLines(group, apps).join('\n')}\n\`\`\`` : '';
   }).filter(Boolean);
-
-  let title = '📱 État des apps';
-  let header = '';
-  if (changes.length > 0) {
-    const first = changes[0];
-    title =
-      changes.length === 1
-        ? (HEADLINES[first.toState] ?? ((a) => `🔔 ${a} vient de changer de statut`))(first.name)
-        : `🔔 ${changes.length} apps viennent de changer de statut`;
-    header = changes.map((c) => changeLine(c, changes.length > 1)).join('\n') + '\n\n';
-  }
-
-  const color =
-    changes.length === 0
-      ? 0x5865f2
-      : { IN_REVIEW: 0x3b82f6, READY_FOR_DISTRIBUTION: 0x22c55e, PENDING_DEVELOPER_RELEASE: 0xa855f7, REJECTED: 0xef4444 }[
-          changes[0].toState
-        ] ?? 0xf59e0b;
-
   return {
     embeds: [
       {
-        title,
-        description: header + sections.join('\n'),
-        color,
+        title: demo ? '🧪 📱 État des apps (démo)' : '📱 État des apps',
+        description: sections.join('\n'),
+        color: 0x5865f2,
         footer: { text: `Mis à jour à ${time}` },
       },
     ],

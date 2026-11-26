@@ -4,7 +4,12 @@ on:
   schedule:
     # Toutes les 30 min (UTC). GitHub peut décaler les crons de quelques minutes.
     - cron: '7,37 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: 'Démo : 3 faux changements sur Parkeur (10 s d''écart), supprimés après 1 min'
+        type: boolean
+        default: false
 
 # Un seul passage à la fois : deux passages simultanés posteraient deux fois.
 concurrency:
@@ -17,7 +22,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +38,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           IGNORED_APPS: ${{ vars.IGNORED_APPS }}
           IGNORED_BUNDLE_IDS: ${{ vars.IGNORED_BUNDLE_IDS }}
-        run: node src/index.mjs
+        run: node src/index.mjs ${{ inputs.demo && '--demo' || '' }}
 
       - name: Enregistrer l'état
         run: |
