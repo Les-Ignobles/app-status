@@ -26,6 +26,8 @@ const isIgnored = ({ id, name, bundleId }) =>
 const dryRun = process.argv.includes('--dry-run');
 // Démo : 3 faux changements sur Parkeur, 10 s d'écart, puis nettoyage.
 const demo = process.argv.includes('--demo');
+// Reposter le tableau même sans changement (bouton « refresh » du workflow).
+const refresh = process.argv.includes('--refresh');
 
 for (const [name, value] of Object.entries({ ASC_ISSUER_ID, ASC_KEY_ID, ASC_PRIVATE_KEY })) {
   if (!value) throw new Error(`Variable manquante : ${name}`);
@@ -177,7 +179,7 @@ const changes = diff(previous, current);
 const schemaChanged = Object.entries(current).some(
   ([id, app]) => 'testflight' in app && previous[id] && !('testflight' in previous[id])
 );
-if (firstRun || changes.length > 0 || schemaChanged) {
+if (firstRun || changes.length > 0 || schemaChanged || refresh) {
   if (dryRun) {
     for (const c of changes) console.log(JSON.stringify(buildChangeMessage(c), null, 2));
     console.log(JSON.stringify(buildBoardMessage(current), null, 2));
@@ -193,7 +195,7 @@ if (firstRun || changes.length > 0 || schemaChanged) {
       ? 'Premier passage : tableau posté.'
       : changes.length
         ? `${changes.length} changement(s) posté(s).`
-        : 'Tableau reposté (nouveau champ suivi).'
+        : 'Tableau reposté.'
   );
 } else {
   console.log(`Aucun changement (${Object.keys(current).length} apps).`);

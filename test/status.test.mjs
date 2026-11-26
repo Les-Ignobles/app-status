@@ -127,3 +127,8 @@ test('tableau : colonne TestFlight si plus récente que l\'App Store', () => {
   const [same] = boardLines([{ ...app('Nox', { version: '1.0.3' }, null), testflight: tf('1.0.3', '12', 'VALID') }]);
   assert.doesNotMatch(same, /TF/);
 });
+
+test('TestFlight : « 1.0.0 » n\'est pas plus récente que « 1.0 » en ligne', () => {
+  const [line] = boardLines([{ ...app('Le temps merde', { version: '1.0' }, null), testflight: tf('1.0.0', '39', 'VALID') }]);
+  assert.doesNotMatch(line, /TF/);
+});

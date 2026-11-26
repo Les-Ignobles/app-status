@@ -38,6 +38,20 @@ const HEADLINES = {
   PREPARE_FOR_SUBMISSION: (app) => `⚪ ${app} prépare une nouvelle version`,
 };
 
+/**
+ * Compare deux versions « 1.1.53 » numériquement ; « 1.0 » = « 1.0.0 ».
+ * < 0 si a < b, 0 si égales, > 0 si a > b.
+ */
+export function compareVersions(a, b) {
+  const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+
 /** Version lisible : « 1.1.53 (270) » ou « 1.1.53 ». */
 export function versionLabel(v) {
   return v.build ? `${v.version} (${v.build})` : v.version;
@@ -145,7 +159,8 @@ export function boardLines(apps, widthsFrom = apps) {
     // Dernier build TestFlight, s'il est plus récent que ce qui est en ligne
     // ou en cours sur l'App Store.
     const tf = app.testflight;
-    if (tf?.version && tf.version !== app.live?.version && tf.version !== app.pending?.version) {
+    const newer = (v) => !v || compareVersions(tf.version, v) > 0;
+    if (tf?.version && newer(app.live?.version) && newer(app.pending?.version)) {
       const tfDot = tf.state === 'VALID' ? '🧪' : tf.state === 'FAILED' || tf.state === 'INVALID' ? '🔴' : '🛠';
       parts.push(`${tfDot} TF ${versionLabel({ version: tf.version, build: tf.build })}`);
     }
