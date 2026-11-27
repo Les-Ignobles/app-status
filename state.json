@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1575653776558133329",
+  "boardMessageId": "1575836213091237950",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -42,9 +42,9 @@
       },
       "testflight": {
         "version": "1.0",
-        "build": "4",
+        "build": "8",
         "state": "VALID",
-        "uploadedDate": "2026-11-26T15:10:55-08:00"
+        "uploadedDate": "2026-11-27T03:04:09-08:00"
       }
     },
     "6499463714": {
