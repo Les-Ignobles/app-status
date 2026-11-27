@@ -50,6 +50,23 @@ de celles d'`apps.json`, séparées par des virgules.
   variables `ASC_*` dans l'environnement).
 - Tests : `npm test`.
 
+## Déclenchement toutes les 5 min : cron-job.org
+
+Le cron de GitHub saute la plupart des passages (2 en 12 h observés). Un job
+cron-job.org (« Cron App Status Les Ignobles ») lance donc le workflow toutes
+les 5 min : `POST https://api.github.com/repos/Les-Ignobles/app-status/actions/workflows/app-status.yml/dispatches`,
+corps `{"ref":"main"}`, en-têtes `Authorization: Bearer <token>`,
+`Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
+Réponse attendue : 204.
+
+- Token : fine-grained, dépôt `app-status` seul, permission « Actions :
+  lecture et écriture ». **Expire le 28/11/2027** : le recréer avant et le
+  remplacer dans cron-job.org.
+- La version d'API `2022-11-28` est arrêtée par GitHub le 10/03/2028 : passer
+  à la suivante d'ici là.
+- Le cron GitHub reste en secours ; un seul passage à la fois, et sans
+  changement rien n'est posté, donc les doublons sont sans effet.
+
 ## Coût et fréquence
 
 Dépôt **public** : minutes GitHub Actions illimitées, d'où un passage toutes
