@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1576169689112125491",
+  "boardMessageId": "1576172231741153321",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -41,7 +41,7 @@
       "pending": {
         "version": "1.1.54",
         "build": "271",
-        "state": "IN_REVIEW"
+        "state": "PENDING_DEVELOPER_RELEASE"
       },
       "testflight": {
         "version": "1.1.54",
