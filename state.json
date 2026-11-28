@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1576172231741153321",
+  "boardMessageId": "1576184782948139080",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -35,14 +35,10 @@
       "name": "Parkeur",
       "group": "internal",
       "live": {
-        "version": "1.1.51",
-        "build": "266"
-      },
-      "pending": {
         "version": "1.1.54",
-        "build": "271",
-        "state": "PENDING_DEVELOPER_RELEASE"
+        "build": "271"
       },
+      "pending": null,
       "testflight": {
         "version": "1.1.54",
         "build": "271",
