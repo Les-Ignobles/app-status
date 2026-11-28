@@ -1,5 +1,5 @@
 {
-  "boardMessageId": "1575911870920007702",
+  "boardMessageId": "1576169689112125491",
   "apps": {
     "1607986709": {
       "name": "Sheech",
@@ -29,6 +29,25 @@
         "build": "39",
         "state": "VALID",
         "uploadedDate": "2026-06-30T05:48:07-07:00"
+      }
+    },
+    "6499463714": {
+      "name": "Parkeur",
+      "group": "internal",
+      "live": {
+        "version": "1.1.51",
+        "build": "266"
+      },
+      "pending": {
+        "version": "1.1.54",
+        "build": "271",
+        "state": "IN_REVIEW"
+      },
+      "testflight": {
+        "version": "1.1.54",
+        "build": "271",
+        "state": "VALID",
+        "uploadedDate": "2026-11-26T08:59:55-08:00"
       }
     },
     "6833487577": {
@@ -64,25 +83,6 @@
         "build": "80",
         "state": "VALID",
         "uploadedDate": "2026-06-25T13:04:04-07:00"
-      }
-    },
-    "6499463714": {
-      "name": "Parkeur",
-      "group": "internal",
-      "live": {
-        "version": "1.1.51",
-        "build": "266"
-      },
-      "pending": {
-        "version": "1.1.54",
-        "build": "271",
-        "state": "WAITING_FOR_REVIEW"
-      },
-      "testflight": {
-        "version": "1.1.54",
-        "build": "271",
-        "state": "VALID",
-        "uploadedDate": "2026-11-26T08:59:55-08:00"
       }
     },
     "6834033730": {
